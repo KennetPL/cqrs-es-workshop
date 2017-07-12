@@ -1,4 +1,5 @@
 <?php
+
 namespace Application;
 
 use Prooph\Common\Messaging\Command;

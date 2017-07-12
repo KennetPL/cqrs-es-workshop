@@ -1,14 +1,13 @@
 <?php
 
 use Application\AddMoney;
+use Application\AddMoneyHandler;
 use Application\CreateAccount;
 use Application\WithdrawMoney;
 use Doctrine\DBAL\Configuration;
 use Doctrine\DBAL\DriverManager;
 use Doctrine\DBAL\Schema\SchemaException;
 use Domain\Account;
-use Domain\Event\AccountBlocked;
-use Domain\Event\AccountCreated;
 use Domain\Event\MoneyAdded;
 use Domain\Event\MoneyWithdrawn;
 use Infrastructure\EventSourcedAccountRepository;
@@ -24,11 +23,11 @@ use Prooph\EventStore\Adapter\PayloadSerializer\JsonPayloadSerializer;
 use Prooph\EventStore\Aggregate\AggregateRepository;
 use Prooph\EventStore\Aggregate\AggregateType;
 use Prooph\EventStore\EventStore;
+use Prooph\EventStore\Stream\StreamName;
 use Prooph\EventStoreBusBridge\EventPublisher;
 use Prooph\EventStoreBusBridge\TransactionManager;
 use Prooph\ServiceBus\CommandBus;
 use Prooph\ServiceBus\EventBus;
-use Prooph\ServiceBus\Exception\CommandDispatchException;
 use Prooph\ServiceBus\Plugin\Router\CommandRouter;
 use Prooph\ServiceBus\Plugin\Router\EventRouter;
 use Rhumsaa\Uuid\Uuid;
@@ -38,22 +37,41 @@ require_once __DIR__ . '/vendor/autoload.php';
 // Connection and schema setup
 $config = new Configuration();
 $connectionParams = array(
-    'dbname' => \getenv('DB_NAME'),
-    'user' => \getenv('DB_USER'),
-    'password' => \getenv('DB_PASSWORD'),
-    'host' => \getenv('DB_HOST'),
-    'port' => \getenv('DB_PORT'),
+    'dbname' => getenv('DB_NAME'),
+    'user' => getenv('DB_USER'),
+    'password' => getenv('DB_PASSWORD'),
+    'host' => getenv('DB_HOST'),
+    'port' => getenv('DB_PORT'),
     'driver' => 'pdo_mysql',
 );
 
+define('DAY_LIMIT', 100);
+
+
 $connection = DriverManager::getConnection($connectionParams, $config);
+
 $schema = $connection->getSchemaManager()->createSchema();
+
 try {
     EventStoreSchema::createSingleStream($schema, 'event_stream', true);
+
     foreach ($schema->toSql($connection->getDatabasePlatform()) as $sql) {
         $connection->exec($sql);
     }
+
 } catch (SchemaException $e) {}
+
+try {
+    $sql = "CREATE TABLE accounts (
+                id char(36) PRIMARY KEY, 
+                balance INTEGER NOT NULL,            
+                currency VARCHAR(50) NOT NULL,
+                transactions INTEGER NOT NULL,
+                last_transaction_date TIMESTAMP
+    )";
+    $connection->exec($sql);
+} catch (\Exception $e) {}
+
 
 // Event bus and event store setup
 $eventBus = new EventBus();
@@ -91,83 +109,66 @@ $transactionManager->setUp($eventStore);
 $commandBus->utilize($transactionManager);
 
 $commandRouter = new CommandRouter();
+
 $commandRouter->attach($commandBus->getActionEventEmitter());
 
 // Routing
 $commandRouter
     ->route(CreateAccount::class)
-    ->to(function (CreateAccount $command) use ($accountRepository) {
-        $account = Account::new($command->id(), $command->currency());
-
-        $accountRepository->save($account);
-    });
-
+    ->to(new \Application\CreateAccountHandler($accountRepository));
 $commandRouter
     ->route(AddMoney::class)
-    ->to(function (AddMoney $command) use ($accountRepository) {
-        /** @var Account $account */
-        $account = $accountRepository->get($command->id());
-        $account->add(new Money($command->amount(), new Currency($command->currency())));
-        $accountRepository->save($account);
-    });
-
+    ->to(new AddMoneyHandler($accountRepository));
 $commandRouter
     ->route(WithdrawMoney::class)
-    ->to(function (WithdrawMoney $command) use ($accountRepository) {
-        /** @var Account $account */
-        $account = $accountRepository->get($command->id());
-        $account->withdraw(new Money($command->amount(), new Currency($command->currency())));
-        $accountRepository->save($account);
-    });
+    ->to(new \Application\WithdrawMoneyHandler($accountRepository));
 
 $eventRouter
-    ->route(AccountCreated::class)
-    ->to(function (AccountCreated $event) {
-        dump('CREATED: ' . $event->currency());
-    });
-
-$eventRouter
-    ->route(AccountBlocked::class)
-    ->to(function (AccountBlocked $event) {
-        dump('BLOCKED: ' . $event->cause());
+    ->route(\Domain\Event\AccountCreated::class)
+    ->to(function (\Domain\Event\AccountCreated $event) use ($connection) {
+        var_dump('CREATED: ' . $event->currency());
+        $connection->executeQuery('DELETE FROM accounts WHERE id = ?', array((string)$event->aggregateId()));
+        $connection->executeQuery('INSERT INTO accounts (id, balance, currency, transactions, last_transaction_date) VALUES (?,?,?,?,?)', array(
+            (string)$event->aggregateId(),
+            0,
+            (string)$event->currency(),
+            0,
+            null
+        ));
     });
 
 $eventRouter
     ->route(MoneyAdded::class)
-    ->to(function (MoneyAdded $event) {
-        dump('LOADED: ' . $event->amount());
+    ->to(function (MoneyAdded $event) use ($connection) {
+        var_dump('ADDED: ' . $event->amount());
+
+        $connection->executeQuery('UPDATE accounts SET balance = balance + ?, transactions = transactions + 1, last_transaction_date = ? WHERE id = ?', array(
+            $event->amount(),
+            $event->createdAt()->format('Y-m-d H:i:s'),
+            (string)$event->aggregateId()
+        ));
     });
 
 $eventRouter
     ->route(MoneyWithdrawn::class)
-    ->to(function (MoneyWithdrawn $event) {
-        dump('WITHDRAWN: ' . $event->amount());
+    ->to(function (MoneyWithdrawn $event) use ($connection) {
+        var_dump('WITHDRAWN: ' . $event->amount());
+        $connection->executeQuery('UPDATE accounts SET balance = balance - ?, transactions = transactions + 1, last_transaction_date = ? WHERE id = ?', array(
+            $event->amount(),
+            $event->createdAt()->format('Y-m-d H:i:s'),
+            (string)$event->aggregateId()
+        ));
     });
 
-
 // Demo
-//$id = Uuid::uuid4();
-//$command = new CreateAccount($id, 'PLN');
-//
-//$commandBus->dispatch($command);
-//
-//for ($i = 0, $iMax = random_int(3, 20); $i < $iMax; $i++) {
-//    $commandBus->dispatch(new AddMoney($id, random_int(1, 1000), 'PLN'));
-//}
+//$id = Uuid::fromString('27ca6f93-ddde-41a7-a62b-b2cbd2af51e5');
+$id = Uuid::uuid4();
+$commandBus->dispatch(new CreateAccount($id, 'PLN'));
+$commandBus->dispatch(new AddMoney($id, 1500, 'PLN'));
+$commandBus->dispatch(new WithdrawMoney($id, 50, 'PLN'));
+$commandBus->dispatch(new WithdrawMoney($id, 80, 'PLN'));
 
-try {
-    $id = Uuid::uuid4();
-    $commandBus->dispatch(new CreateAccount($id, 'PLN'));
-    $commandBus->dispatch(new AddMoney($id, random_int(1, 1000), 'PLN'));
-    $commandBus->dispatch(new WithdrawMoney($id, random_int(1, 2500), 'PLN'));
-
-    dump($accountRepository->get($id));
-} catch (CommandDispatchException $exception) {
-    if ($exception->getPrevious() instanceof \Domain\Exception\NegativeBalanceException) {
-        dump($exception->getPrevious()->getMessage());
-        dump($accountRepository->get($id));
-    }
-}
+//var_dump($accountRepository->get($id));
 
 //$events = $eventStore->loadEventsByMetadataFrom(new StreamName('event_stream'), []);
 //

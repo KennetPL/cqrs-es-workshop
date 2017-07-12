@@ -4,11 +4,11 @@ services:
   web:
     build: .
     ports:
-      - 6000:80
+      - 85:80
     volumes:
       - .:/var/www/html
     environment:
-      - DB_DRIVER=mysql
+      - DB_DRIVER=pdo_mysql
       - DB_HOST=mysql
       - DB_USER=user
       - DB_PASSWORD=userpass
@@ -27,4 +27,4 @@ services:
      - PMA_ARBITRARY=1
     restart: always
     ports:
-     - 6001:80
+     - 86:80

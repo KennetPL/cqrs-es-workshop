@@ -1,4 +1,5 @@
 <?php
+
 namespace Domain\Event;
 
 use Prooph\EventSourcing\AggregateChanged;
