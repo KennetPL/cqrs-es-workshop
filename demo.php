@@ -10,6 +10,7 @@ use Doctrine\DBAL\Schema\SchemaException;
 use Domain\Account;
 use Domain\Event\MoneyAdded;
 use Domain\Event\MoneyWithdrawn;
+use Infrastructure\EventHandler\AddMoneyEventHandler;
 use Infrastructure\EventSourcedAccountRepository;
 use Money\Currency;
 use Money\Money;
@@ -71,6 +72,9 @@ try {
     )";
     $connection->exec($sql);
 } catch (\Exception $e) {}
+
+$rabbitMQClient = new \Infrastructure\RabbitMQClient('rabbit1', 5672, 'rabbitmq', 'rabbitmq', '/');
+$rabbitMQClient->sendMessage('Hello world!');
 
 
 // Event bus and event store setup
@@ -139,15 +143,7 @@ $eventRouter
 
 $eventRouter
     ->route(MoneyAdded::class)
-    ->to(function (MoneyAdded $event) use ($connection) {
-        var_dump('ADDED: ' . $event->amount());
-
-        $connection->executeQuery('UPDATE accounts SET balance = balance + ?, transactions = transactions + 1, last_transaction_date = ? WHERE id = ?', array(
-            $event->amount(),
-            $event->createdAt()->format('Y-m-d H:i:s'),
-            (string)$event->aggregateId()
-        ));
-    });
+    ->to(new AddMoneyEventHandler($rabbitMQClient, $connection));
 
 $eventRouter
     ->route(MoneyWithdrawn::class)
@@ -166,7 +162,7 @@ $id = Uuid::uuid4();
 $commandBus->dispatch(new CreateAccount($id, 'PLN'));
 $commandBus->dispatch(new AddMoney($id, 1500, 'PLN'));
 $commandBus->dispatch(new WithdrawMoney($id, 50, 'PLN'));
-$commandBus->dispatch(new WithdrawMoney($id, 80, 'PLN'));
+$commandBus->dispatch(new WithdrawMoney($id, 30, 'PLN'));
 
 //var_dump($accountRepository->get($id));
 
@@ -176,3 +172,9 @@ $commandBus->dispatch(new WithdrawMoney($id, 80, 'PLN'));
 //    //var_dump(get_class($event));
 //    $eventBus->dispatch($event);
 //}
+
+//
+//192.168.96.125:32778
+//
+//192.168.96.125:32781
+//guest/guest

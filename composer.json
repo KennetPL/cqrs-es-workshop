@@ -9,7 +9,8 @@
     "prooph/event-store-doctrine-adapter": "^3.0",
     "prooph/service-bus": "~5.0",
     "moneyphp/money": "^3.0",
-    "esky/enum": "^1.1"
+    "esky/enum": "^1.1",
+    "php-amqplib/php-amqplib": "^2.6"
   },
   "autoload": {
     "psr-4": {
