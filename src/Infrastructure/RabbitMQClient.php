@@ -38,8 +38,12 @@ class RabbitMQClient implements QueueClient
 
     public function sendMessage($messageBody)
     {
+        if (is_array($messageBody) || is_object($messageBody)) {
+            $messageBody = json_encode($messageBody);
+        }
+
         $message = new AMQPMessage($messageBody, array(
-            'content_type' => 'text/plain',
+            'content_type' => 'application/json',
             'delivery_mode' => AMQPMessage::DELIVERY_MODE_PERSISTENT
         ));
         $this->channel->basic_publish($message, static::EXCHANGE);

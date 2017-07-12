@@ -3,17 +3,21 @@
 use Application\AddMoney;
 use Application\AddMoneyHandler;
 use Application\CreateAccount;
+use Application\CreateAccountHandler;
 use Application\WithdrawMoney;
+use Application\WithdrawMoneyHandler;
 use Doctrine\DBAL\Configuration;
 use Doctrine\DBAL\DriverManager;
 use Doctrine\DBAL\Schema\SchemaException;
 use Domain\Account;
+use Domain\Event\AccountCreated;
 use Domain\Event\MoneyAdded;
 use Domain\Event\MoneyWithdrawn;
+use Infrastructure\EventHandler\AccountCreatedEventHandler;
 use Infrastructure\EventHandler\AddMoneyEventHandler;
+use Infrastructure\EventHandler\MoneyAddedEventHandler;
+use Infrastructure\EventHandler\MoneyWithdrawnEventHandler;
 use Infrastructure\EventSourcedAccountRepository;
-use Money\Currency;
-use Money\Money;
 use Prooph\Common\Event\ProophActionEventEmitter;
 use Prooph\Common\Messaging\FQCNMessageFactory;
 use Prooph\Common\Messaging\NoOpMessageConverter;
@@ -24,7 +28,6 @@ use Prooph\EventStore\Adapter\PayloadSerializer\JsonPayloadSerializer;
 use Prooph\EventStore\Aggregate\AggregateRepository;
 use Prooph\EventStore\Aggregate\AggregateType;
 use Prooph\EventStore\EventStore;
-use Prooph\EventStore\Stream\StreamName;
 use Prooph\EventStoreBusBridge\EventPublisher;
 use Prooph\EventStoreBusBridge\TransactionManager;
 use Prooph\ServiceBus\CommandBus;
@@ -34,6 +37,7 @@ use Prooph\ServiceBus\Plugin\Router\EventRouter;
 use Rhumsaa\Uuid\Uuid;
 
 require_once __DIR__ . '/vendor/autoload.php';
+require_once __DIR__ . '/config/defines.php';
 
 // Connection and schema setup
 $config = new Configuration();
@@ -45,8 +49,6 @@ $connectionParams = array(
     'port' => getenv('DB_PORT'),
     'driver' => 'pdo_mysql',
 );
-
-define('DAY_LIMIT', 100);
 
 
 $connection = DriverManager::getConnection($connectionParams, $config);
@@ -73,9 +75,8 @@ try {
     $connection->exec($sql);
 } catch (\Exception $e) {}
 
-$rabbitMQClient = new \Infrastructure\RabbitMQClient('rabbit1', 5672, 'rabbitmq', 'rabbitmq', '/');
-$rabbitMQClient->sendMessage('Hello world!');
-
+//RabbitMQ setup
+$rabbitMQClient = new \Infrastructure\RabbitMQClient(RABIT_HOST, RABIT_PORT, RABIT_USER, RABIT_PASS, RABIT_VHOST);
 
 // Event bus and event store setup
 $eventBus = new EventBus();
@@ -88,9 +89,7 @@ $eventStore = new EventStore(
     ),
     new ProophActionEventEmitter()
 );
-
 $eventRouter = new EventRouter();
-
 $eventRouter->attach($eventBus->getActionEventEmitter());
 
 (new EventPublisher($eventBus))->setUp($eventStore);
@@ -106,55 +105,34 @@ $accountRepository = new EventSourcedAccountRepository(
 
 // Command bus setup
 $commandBus = new CommandBus();
-
 $transactionManager = new TransactionManager();
-
 $transactionManager->setUp($eventStore);
 $commandBus->utilize($transactionManager);
-
 $commandRouter = new CommandRouter();
-
 $commandRouter->attach($commandBus->getActionEventEmitter());
 
 // Routing
 $commandRouter
     ->route(CreateAccount::class)
-    ->to(new \Application\CreateAccountHandler($accountRepository));
+    ->to(new CreateAccountHandler($accountRepository));
 $commandRouter
     ->route(AddMoney::class)
     ->to(new AddMoneyHandler($accountRepository));
 $commandRouter
     ->route(WithdrawMoney::class)
-    ->to(new \Application\WithdrawMoneyHandler($accountRepository));
+    ->to(new WithdrawMoneyHandler($accountRepository));
 
 $eventRouter
-    ->route(\Domain\Event\AccountCreated::class)
-    ->to(function (\Domain\Event\AccountCreated $event) use ($connection) {
-        var_dump('CREATED: ' . $event->currency());
-        $connection->executeQuery('DELETE FROM accounts WHERE id = ?', array((string)$event->aggregateId()));
-        $connection->executeQuery('INSERT INTO accounts (id, balance, currency, transactions, last_transaction_date) VALUES (?,?,?,?,?)', array(
-            (string)$event->aggregateId(),
-            0,
-            (string)$event->currency(),
-            0,
-            null
-        ));
-    });
+    ->route(AccountCreated::class)
+    ->to(new AccountCreatedEventHandler($connection));
 
 $eventRouter
     ->route(MoneyAdded::class)
-    ->to(new AddMoneyEventHandler($rabbitMQClient, $connection));
+    ->to(new MoneyAddedEventHandler($rabbitMQClient, $connection));
 
 $eventRouter
     ->route(MoneyWithdrawn::class)
-    ->to(function (MoneyWithdrawn $event) use ($connection) {
-        var_dump('WITHDRAWN: ' . $event->amount());
-        $connection->executeQuery('UPDATE accounts SET balance = balance - ?, transactions = transactions + 1, last_transaction_date = ? WHERE id = ?', array(
-            $event->amount(),
-            $event->createdAt()->format('Y-m-d H:i:s'),
-            (string)$event->aggregateId()
-        ));
-    });
+    ->to(new MoneyWithdrawnEventHandler($rabbitMQClient, $connection));
 
 // Demo
 //$id = Uuid::fromString('27ca6f93-ddde-41a7-a62b-b2cbd2af51e5');

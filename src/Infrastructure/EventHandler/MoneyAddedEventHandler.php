@@ -10,7 +10,7 @@ use Domain\Event\MoneyAdded;
  * Date: 12.07.2017
  * Time: 13:51
  */
-class AddMoneyEventHandler
+class MoneyAddedEventHandler
 {
     /** @var  \Domain\QueueClient */
     protected $queueClient;
@@ -41,7 +41,10 @@ class AddMoneyEventHandler
             (string)$event->aggregateId()
         ));
 
-        $this->queueClient->sendMessage($msg);
+        $this->queueClient->sendMessage(array(
+            'accountId' => $event->aggregateId(),
+            'event' => MoneyAdded::class,
+            'amount' => $event->amount()
+        ));
     }
-
 }
