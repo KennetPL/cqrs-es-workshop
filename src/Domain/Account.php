@@ -10,7 +10,7 @@ use Money\Money;
 use Prooph\EventSourcing\AggregateRoot;
 use Rhumsaa\Uuid\Uuid;
 
-class Account extends AggregateRoot
+class Account extends AggregateRoot implements \JsonSerializable
 {
     /**
      * @var Uuid
@@ -65,6 +65,9 @@ class Account extends AggregateRoot
         return (string)$this->id;
     }
 
+    /**
+     * @return string
+     */
     public function id()
     {
         return $this->aggregateId();
@@ -97,5 +100,15 @@ class Account extends AggregateRoot
 
         $this->balance = $this->balance->subtract($money);
 
+    }
+
+    function jsonSerialize()
+    {
+        return [
+            'id' => $this->id(),
+            'balance' => $this->balance->getAmount(),
+            'currency' => $this->balance->getCurrency(),
+            'todayWithdrawn' => $this->todayWithdrawn->getAmount()
+        ];
     }
 }

@@ -124,7 +124,7 @@ $commandRouter
 
 $eventRouter
     ->route(AccountCreated::class)
-    ->to(new AccountCreatedEventHandler($connection));
+    ->to(new AccountCreatedEventHandler($rabbitMQClient, $connection));
 
 $eventRouter
     ->route(MoneyAdded::class)
@@ -141,6 +141,7 @@ $commandBus->dispatch(new CreateAccount($id, 'PLN'));
 $commandBus->dispatch(new AddMoney($id, 1500, 'PLN'));
 $commandBus->dispatch(new WithdrawMoney($id, 50, 'PLN'));
 $commandBus->dispatch(new WithdrawMoney($id, 30, 'PLN'));
+
 
 //var_dump($accountRepository->get($id));
 

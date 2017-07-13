@@ -32,9 +32,6 @@ class MoneyWithdrawnEventHandler
 
     public function __invoke(MoneyWithdrawn $event)
     {
-        $msg = 'ADDED: ' . $event->amount();
-
-        var_dump($msg);
         $this->connection->executeQuery('UPDATE accounts SET balance = balance - ?, transactions = transactions + 1, last_transaction_date = ? WHERE id = ?', array(
             $event->amount(),
             $event->createdAt()->format('Y-m-d H:i:s'),

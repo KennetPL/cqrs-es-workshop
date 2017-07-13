@@ -10,7 +10,10 @@
     "prooph/service-bus": "~5.0",
     "moneyphp/money": "^3.0",
     "esky/enum": "^1.1",
-    "php-amqplib/php-amqplib": "^2.6"
+    "php-amqplib/php-amqplib": "^2.6",
+    "silex/silex": "^2.1",
+    "symfony/var-dumper": "^3.3",
+    "symfony/serializer": "^3.3"
   },
   "autoload": {
     "psr-4": {
