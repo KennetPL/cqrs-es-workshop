@@ -13,21 +13,17 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 require_once __DIR__ . '/../vendor/autoload.php';
-require_once __DIR__ . '/../config/defines.php';
 
 $app = new Application();
-
-$app['debug'] = true;
 
 $serviceLoader = new \Application\ServiceLoader($app);
 $serviceLoader->loadServices();
 
-$app->get('/accounts.{_format}', function (Application $app, Request $request) {
+$app->get('/accounts', function (Application $app, Request $request) {
     /** @var \Doctrine\DBAL\Connection $connection */
     $connection = $app['db_connection'];
 
     $format = 'json';
-
     $accounts = $connection->fetchAll('SELECT * FROM accounts ORDER BY last_transaction_date DESC');
     return new Response($app['serializer']->serialize($accounts, $format), 200, [
         "Content-Type" => $request->getMimeType($format)

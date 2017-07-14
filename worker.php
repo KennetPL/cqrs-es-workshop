@@ -6,13 +6,21 @@
  * Time: 14:15
  */
 require_once __DIR__ . '/vendor/autoload.php';
-require_once __DIR__ . '/config/defines.php';
 
 
-$queue = \Infrastructure\RabbitMQClient::QUEUE;
-$exchange = \Infrastructure\RabbitMQClient::EXCHANGE;
+$config = json_decode(file_get_contents(__DIR__ . '/config/app.json'), true);
 
-$connection = new \PhpAmqpLib\Connection\AMQPStreamConnection(RABIT_HOST, RABIT_PORT, RABIT_USER, RABIT_PASS, RABIT_VHOST);
+$exchange = $config['queue_configuration']['exchange'];
+$queue = $config['queue_configuration']['queue'];
+
+
+$connection = new \PhpAmqpLib\Connection\AMQPStreamConnection(
+    $config['queue_configuration']['host'],
+    $config['queue_configuration']['port'],
+    $config['queue_configuration']['user'],
+    $config['queue_configuration']['pass'],
+    $config['queue_configuration']['vhost']
+);
 $channel = $connection->channel();
 $channel->queue_declare($queue, false, true, false, false);
 $channel->exchange_declare($exchange, 'direct', false, true, false);

@@ -13,7 +13,8 @@
     "php-amqplib/php-amqplib": "^2.6",
     "silex/silex": "^2.1",
     "symfony/var-dumper": "^3.3",
-    "symfony/serializer": "^3.3"
+    "symfony/serializer": "^3.3",
+    "reva2/config-service-provider": "^2.0"
   },
   "autoload": {
     "psr-4": {

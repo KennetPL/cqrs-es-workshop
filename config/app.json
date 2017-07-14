@@ -1,0 +1,21 @@
+{
+  "debug": true,
+  "day_limit": 1000,
+  "db_configuration": {
+    "dbname": "workshop",
+    "user": "user",
+    "password": "userpass",
+    "host": "mysql",
+    "port": "3306",
+    "driver": "pdo_mysql"
+  },
+  "queue_configuration": {
+    "host": "rabbit1",
+    "port": 5672,
+    "user": "rabbitmq",
+    "pass": "rabbitmq",
+    "vhost": "/",
+    "queue": "mk-messages",
+    "exchange": "mk-router"
+  }
+}

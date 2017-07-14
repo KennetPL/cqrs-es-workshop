@@ -37,21 +37,14 @@ use Prooph\ServiceBus\Plugin\Router\EventRouter;
 use Rhumsaa\Uuid\Uuid;
 
 require_once __DIR__ . '/vendor/autoload.php';
-require_once __DIR__ . '/config/defines.php';
+
+
+$config = json_decode(file_get_contents(__DIR__ . '/config/app.json'), true);
+//@TODO brzydko
+define('DAY_LIMIT', $config['day_limit']);
 
 // Connection and schema setup
-$config = new Configuration();
-$connectionParams = array(
-    'dbname' => getenv('DB_NAME'),
-    'user' => getenv('DB_USER'),
-    'password' => getenv('DB_PASSWORD'),
-    'host' => getenv('DB_HOST'),
-    'port' => getenv('DB_PORT'),
-    'driver' => 'pdo_mysql',
-);
-
-
-$connection = DriverManager::getConnection($connectionParams, $config);
+$connection = DriverManager::getConnection($config['db_configuration'], new Configuration());
 
 $schema = $connection->getSchemaManager()->createSchema();
 
@@ -63,7 +56,6 @@ try {
     }
 
 } catch (SchemaException $e) {}
-
 try {
     $sql = "CREATE TABLE accounts (
                 id char(36) PRIMARY KEY, 
@@ -76,7 +68,15 @@ try {
 } catch (\Exception $e) {}
 
 //RabbitMQ setup
-$rabbitMQClient = new \Infrastructure\RabbitMQClient(RABIT_HOST, RABIT_PORT, RABIT_USER, RABIT_PASS, RABIT_VHOST);
+$rabbitMQClient = new \Infrastructure\RabbitMQClient(
+    $config['queue_configuration']['host'],
+    $config['queue_configuration']['port'],
+    $config['queue_configuration']['user'],
+    $config['queue_configuration']['pass'],
+    $config['queue_configuration']['vhost'],
+    $config['queue_configuration']['exchange'],
+    $config['queue_configuration']['queue']
+);
 
 // Event bus and event store setup
 $eventBus = new EventBus();
@@ -139,8 +139,8 @@ $eventRouter
 $id = Uuid::uuid4();
 $commandBus->dispatch(new CreateAccount($id, 'PLN'));
 $commandBus->dispatch(new AddMoney($id, 1500, 'PLN'));
-$commandBus->dispatch(new WithdrawMoney($id, 50, 'PLN'));
-$commandBus->dispatch(new WithdrawMoney($id, 30, 'PLN'));
+$commandBus->dispatch(new WithdrawMoney($id, 150, 'PLN'));
+$commandBus->dispatch(new WithdrawMoney($id, 20, 'PLN'));
 
 
 //var_dump($accountRepository->get($id));

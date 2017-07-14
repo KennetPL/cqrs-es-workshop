@@ -16,9 +16,9 @@ use PhpAmqpLib\Message\AMQPMessage;
 class RabbitMQClient implements QueueClient
 {
 
-    const EXCHANGE = 'mk-router';
+    protected $exchange;
 
-    const QUEUE = 'mk-messages';
+    protected $queue;
 
     /** @var \PhpAmqpLib\Channel\AMQPChannel  */
     protected $channel;
@@ -26,14 +26,17 @@ class RabbitMQClient implements QueueClient
     /** @var AMQPStreamConnection  */
     protected $connection;
 
-    public function __construct($host, $port, $user, $pass, $vhost)
+    public function __construct($host, $port, $user, $pass, $vhost, $exchange = 'router', $queue = 'messages')
     {
         $this->connection = new AMQPStreamConnection($host, $port, $user, $pass, $vhost);
         $this->channel = $this->connection->channel();
 
-        $this->channel->queue_declare(static::QUEUE, false, true, false, false);
-        $this->channel->exchange_declare(static::EXCHANGE, 'direct', false, true, false);
-        $this->channel->queue_bind(static::QUEUE, static::EXCHANGE);
+        $this->queue = $queue;
+        $this->exchange = $exchange;
+
+        $this->channel->queue_declare($this->queue, false, true, false, false);
+        $this->channel->exchange_declare($this->exchange, 'direct', false, true, false);
+        $this->channel->queue_bind($this->queue, $this->exchange);
     }
 
     public function sendMessage($messageBody)
@@ -46,7 +49,7 @@ class RabbitMQClient implements QueueClient
             'content_type' => 'application/json',
             'delivery_mode' => AMQPMessage::DELIVERY_MODE_PERSISTENT
         ));
-        $this->channel->basic_publish($message, static::EXCHANGE);
+        $this->channel->basic_publish($message, $this->exchange);
     }
 
     public function __destruct()

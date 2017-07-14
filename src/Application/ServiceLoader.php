@@ -13,6 +13,7 @@ use Domain\Account;
 use Domain\Event\AccountCreated;
 use Domain\Event\MoneyAdded;
 use Domain\Event\MoneyWithdrawn;
+use Igorw\Silex\ConfigServiceProvider;
 use Infrastructure\EventHandler\AccountCreatedEventHandler;
 use Infrastructure\EventHandler\MoneyAddedEventHandler;
 use Infrastructure\EventHandler\MoneyWithdrawnEventHandler;
@@ -60,21 +61,25 @@ class ServiceLoader
             return array(new JsonSerializableNormalizer(), new CustomNormalizer(), new GetSetMethodNormalizer());
         };
 
-        $this->app['db_connection'] = function () {
-            $config = new Configuration();
-            $connectionParams = array(
-                'dbname' => getenv('DB_NAME'),
-                'user' => getenv('DB_USER'),
-                'password' => getenv('DB_PASSWORD'),
-                'host' => getenv('DB_HOST'),
-                'port' => getenv('DB_PORT'),
-                'driver' => 'pdo_mysql',
-            );
-            return DriverManager::getConnection($connectionParams, $config);
+        $this->app->register(new ConfigServiceProvider(__DIR__ . "/../../config/app.json"));
+
+        //@TODO brzydko
+        define('DAY_LIMIT', $this->app['day_limit']);
+
+        $this->app['db_connection'] = function (Application $app) {
+            return DriverManager::getConnection($app['db_configuration'], new Configuration());
         };
 
-        $this->app['queue_client'] = function () {
-            return new RabbitMQClient(RABIT_HOST, RABIT_PORT, RABIT_USER, RABIT_PASS, RABIT_VHOST);
+        $this->app['queue_client'] = function (Application $app) {
+            return new RabbitMQClient(
+                $app['queue_configuration']['host'],
+                $app['queue_configuration']['port'],
+                $app['queue_configuration']['user'],
+                $app['queue_configuration']['pass'],
+                $app['queue_configuration']['vhost'],
+                $app['queue_configuration']['exchange'],
+                $app['queue_configuration']['queue']
+            );
         };
 
         $this->app['event_bus'] = function () {

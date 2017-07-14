@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "741ab65bc848f553722879a81583bc0a",
+    "content-hash": "fe4ba9645fc2ffb54d9542caee2d8cf1",
     "packages": [
         {
             "name": "beberlei/assert",
@@ -1356,6 +1356,63 @@
                 "uuid"
             ],
             "time": "2016-03-22T18:20:19+00:00"
+        },
+        {
+            "name": "reva2/config-service-provider",
+            "version": "v2.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/reva2/ConfigServiceProvider.git",
+                "reference": "a00aed785c8cb9ea6c82e936da1c7133767a941c"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/reva2/ConfigServiceProvider/zipball/a00aed785c8cb9ea6c82e936da1c7133767a941c",
+                "reference": "a00aed785c8cb9ea6c82e936da1c7133767a941c",
+                "shasum": ""
+            },
+            "require": {
+                "silex/silex": "~2.0"
+            },
+            "require-dev": {
+                "jamesmoss/toml": "~1.1",
+                "phpunit/phpunit": "~4.8",
+                "symfony/yaml": "~3.1"
+            },
+            "suggest": {
+                "jamesmoss/toml": "~1.1",
+                "symfony/yaml": "~3.1"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "1.2-dev"
+                }
+            },
+            "autoload": {
+                "psr-0": {
+                    "Igorw\\Silex": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Igor Wiedler",
+                    "email": "igor@wiedler.ch"
+                },
+                {
+                    "name": "Contributors",
+                    "homepage": "https://github.com/reva2/ConfigServiceProvider/graphs/contributors"
+                }
+            ],
+            "description": "A config ServiceProvider for Silex 2.x with support for php, json and yaml.",
+            "keywords": [
+                "silex"
+            ],
+            "time": "2016-06-10T15:06:35+00:00"
         },
         {
             "name": "silex/silex",
