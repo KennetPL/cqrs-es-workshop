@@ -6,6 +6,7 @@
  * Time: 08:11
  */
 use Application\CreateAccount;
+use Application\WithdrawMoney;
 use Domain\Account;
 use Rhumsaa\Uuid\Uuid;
 use Silex\Application;
@@ -18,6 +19,17 @@ $app = new Application();
 
 $serviceLoader = new \Application\ServiceLoader($app);
 $serviceLoader->loadServices();
+
+$app->get('/', function() {
+    $html = '<h1>Hello account api</h1>' .
+        '<h2>endpoints:</h2>' .
+        '<p>
+            GET /accounts</br>
+            POST /accounts</br>
+            GET /accounts/{accountId}</br>
+        </p>';
+    return new Response('Hello account api');
+});
 
 $app->get('/accounts', function (Application $app, Request $request) {
     /** @var \Doctrine\DBAL\Connection $connection */
@@ -42,6 +54,16 @@ $app->post('/accounts', function (Request $request, Application $app) {
     ]);
 });
 
+$app->put('/accounts/{accountId}/withdraw', function($accountId, Application $app, Request $request) {
+    $amount = $request->get('amount');
+    $currency = $request->get('currency', 'PLN');
+    $app['command_bus']->dispatch(new WithdrawMoney($accountId, $amount, $currency));
+
+    return new Response('', 204);
+})->convert('accountId', function ($accountId) {
+    return Uuid::fromString($accountId);
+});;
+
 $app->get('/accounts/{accountId}', function ($accountId, Application $app, Request $request) {
     /** @var Account $account */
     $account = $app['repository.accounts']->get($accountId);
@@ -52,6 +74,10 @@ $app->get('/accounts/{accountId}', function ($accountId, Application $app, Reque
     ));
 })->convert('accountId', function ($accountId) {
     return Uuid::fromString($accountId);
+});
+
+$app->error(function (\Exception $e, $code) {
+    return new Response($e->getMessage());
 });
 
 $app->run();
