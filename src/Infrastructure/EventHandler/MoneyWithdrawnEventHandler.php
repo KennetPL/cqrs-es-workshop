@@ -38,10 +38,18 @@ class MoneyWithdrawnEventHandler
             (string)$event->aggregateId()
         ));
 
-        $this->queueClient->sendMessage(array(
-            'accountId' => $event->aggregateId(),
-            'event' => MoneyWithdrawn::class,
-            'amount' => $event->amount()
-        ));
+        $msg = [
+            'event' => $event::EVENT_NAME,
+            'event_id' => $event->uuid()->toString(),
+            'correlation_id' => '???',
+            'created' => $event->createdAt()->format('Y-m-d H:i:s'),
+            'version' => $event->version(),
+            'data'  => [
+                'accountId' => $event->aggregateId(),
+                'currency' => $event->currency(),
+                'amount' => $event->amount()
+            ]
+        ];
+        $this->queueClient->sendMessage($msg);
     }
 }

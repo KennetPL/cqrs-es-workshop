@@ -7,6 +7,8 @@ use Rhumsaa\Uuid\Uuid;
 
 class AccountCreated extends AggregateChanged
 {
+    const EVENT_NAME = 'ACCOUNT_CREATED';
+
     public static function from(Uuid $id, string $currency)
     {
         return self::occur(

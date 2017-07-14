@@ -7,6 +7,8 @@ use Rhumsaa\Uuid\Uuid;
 /** @noinspection LongInheritanceChainInspection */
 class AccountBlocked extends AggregateChanged
 {
+    const EVENT_NAME = 'ACCOUNT_BLOCKED';
+
     public static function from(Uuid $id, string $cause)
     {
         return self::occur(

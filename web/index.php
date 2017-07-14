@@ -21,13 +21,13 @@ $serviceLoader = new \Application\ServiceLoader($app);
 $serviceLoader->loadServices();
 
 $app->get('/', function() {
-    $html = '<h1>Hello account api</h1>' .
+    $html = '<h1>Account API v0.0.1 beta</h1>' .
         '<h2>endpoints:</h2>' .
         '<p>
-            <strong>GET</strong> /accounts</br>
-            <strong>POST</strong> /accounts (currency)</br>
-            <strong>GET</strong> /accounts/{accountId}</br>
-            <strong>PUT</strong> /accounts/{accountId}/withdraw (amount, currency)</br>
+            <strong>GET</strong> http://192.168.96.22:85/index.php/accounts</br>
+            <strong>POST</strong> http://192.168.96.22:85/index.php/accounts (currency)</br>
+            <strong>GET</strong> http://192.168.96.22:85/index.php/accounts/{accountId}</br>
+            <strong>PUT</strong> http://192.168.96.22:85/index.php/accounts/{accountId}/withdraw (amount, currency)</br>
         </p>';
     return new Response($html);
 });

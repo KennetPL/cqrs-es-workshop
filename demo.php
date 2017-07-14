@@ -139,9 +139,8 @@ $eventRouter
 $id = Uuid::uuid4();
 $commandBus->dispatch(new CreateAccount($id, 'PLN'));
 $commandBus->dispatch(new AddMoney($id, 1500, 'PLN'));
-$commandBus->dispatch(new WithdrawMoney($id, 150, 'PLN'));
+$commandBus->dispatch(new WithdrawMoney($id, 50, 'PLN'));
 $commandBus->dispatch(new WithdrawMoney($id, 20, 'PLN'));
-
 
 //var_dump($accountRepository->get($id));
 
