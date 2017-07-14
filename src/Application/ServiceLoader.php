@@ -61,7 +61,7 @@ class ServiceLoader
             return array(new JsonSerializableNormalizer(), new CustomNormalizer(), new GetSetMethodNormalizer());
         };
 
-        $this->app->register(new ConfigServiceProvider(__DIR__ . "/../../config/app.json"));
+        $this->app->register(new ConfigServiceProvider(__DIR__ . "/../../config/app_prod.json"));
 
         //@TODO brzydko
         define('DAY_LIMIT', $this->app['day_limit']);

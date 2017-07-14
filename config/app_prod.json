@@ -1,0 +1,21 @@
+{
+  "debug": true,
+  "day_limit": 100,
+  "db_configuration": {
+    "dbname": "workshop",
+    "user": "workshop",
+    "password": "workshop",
+    "host": "52.16.150.144",
+    "port": "3306",
+    "driver": "pdo_mysql"
+  },
+  "queue_configuration": {
+    "host": "52.16.150.144",
+    "port": 5672,
+    "user": "guest",
+    "pass": "guest",
+    "vhost": "/",
+    "queue": "mk-messages",
+    "exchange": "mk-router"
+  }
+}

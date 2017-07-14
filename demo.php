@@ -39,7 +39,7 @@ use Rhumsaa\Uuid\Uuid;
 require_once __DIR__ . '/vendor/autoload.php';
 
 
-$config = json_decode(file_get_contents(__DIR__ . '/config/app.json'), true);
+$config = json_decode(file_get_contents(__DIR__ . '/config/app_prod.json'), true);
 //@TODO brzydko
 define('DAY_LIMIT', $config['day_limit']);
 

@@ -24,11 +24,12 @@ $app->get('/', function() {
     $html = '<h1>Hello account api</h1>' .
         '<h2>endpoints:</h2>' .
         '<p>
-            GET /accounts</br>
-            POST /accounts</br>
-            GET /accounts/{accountId}</br>
+            <strong>GET</strong> /accounts</br>
+            <strong>POST</strong> /accounts (currency)</br>
+            <strong>GET</strong> /accounts/{accountId}</br>
+            <strong>PUT</strong> /accounts/{accountId}/withdraw (amount, currency)</br>
         </p>';
-    return new Response('Hello account api');
+    return new Response($html);
 });
 
 $app->get('/accounts', function (Application $app, Request $request) {

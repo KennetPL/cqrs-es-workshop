@@ -35,7 +35,7 @@ class RabbitMQClient implements QueueClient
         $this->exchange = $exchange;
 
         $this->channel->queue_declare($this->queue, false, true, false, false);
-        $this->channel->exchange_declare($this->exchange, 'direct', false, true, false);
+        $this->channel->exchange_declare($this->exchange, 'fanout', false, true, false);
         $this->channel->queue_bind($this->queue, $this->exchange);
     }
 

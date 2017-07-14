@@ -43,8 +43,6 @@ class AccountCreatedEventHandler
             null
         ));
 
-        echo (string)$event->aggregateId();
-
         $this->queueClient->sendMessage(array(
             'accountId' => $event->aggregateId(),
             'event' => AccountCreated::class
