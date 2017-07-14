@@ -45,11 +45,14 @@ class MoneyWithdrawnEventHandler
             'created' => $event->createdAt()->format('Y-m-d H:i:s'),
             'version' => $event->version(),
             'data'  => [
-                'accountId' => $event->aggregateId(),
+                'transaction_title' => $event->transactionTitle(),
+                'account_id' => $event->aggregateId(),
                 'currency' => $event->currency(),
                 'amount' => $event->amount()
             ]
         ];
+        var_dump($msg);
+
         $this->queueClient->sendMessage($msg);
     }
 }

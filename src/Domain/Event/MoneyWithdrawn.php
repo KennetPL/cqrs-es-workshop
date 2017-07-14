@@ -9,13 +9,14 @@ class MoneyWithdrawn extends AggregateChanged
 {
     const EVENT_NAME = 'MONEY_WITHDRAWN';
 
-    public static function from(Uuid $id, $amount, string $currency)
+    public static function from(Uuid $id, $amount, string $currency, string $transactionTitle = '')
     {
         return self::occur(
             (string)$id,
             [
                 'amount' => $amount,
-                'currency' => $currency
+                'currency' => $currency,
+                'transactionTitle' => $transactionTitle
             ]
         );
     }
@@ -28,5 +29,10 @@ class MoneyWithdrawn extends AggregateChanged
     public function currency()
     {
         return $this->payload['currency'];
+    }
+
+    public function transactionTitle()
+    {
+        return $this->payload['transactionTitle'];
     }
 }

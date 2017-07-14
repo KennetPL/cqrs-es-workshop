@@ -135,12 +135,12 @@ $eventRouter
     ->to(new MoneyWithdrawnEventHandler($rabbitMQClient, $connection));
 
 // Demo
-//$id = Uuid::fromString('27ca6f93-ddde-41a7-a62b-b2cbd2af51e5');
-$id = Uuid::uuid4();
-$commandBus->dispatch(new CreateAccount($id, 'PLN'));
-$commandBus->dispatch(new AddMoney($id, 1500, 'PLN'));
-$commandBus->dispatch(new WithdrawMoney($id, 50, 'PLN'));
-$commandBus->dispatch(new WithdrawMoney($id, 20, 'PLN'));
+//$id = Uuid::fromString('b660359c-0b3a-466c-a5fa-513d04dd4b75');
+//$id = Uuid::uuid4();
+//$commandBus->dispatch(new CreateAccount($id, 'PLN'));
+//$commandBus->dispatch(new AddMoney($id, 1000, 'PLN'));
+//$commandBus->dispatch(new WithdrawMoney($id, 50, 'PLN', 'Tytuł transakcji'));
+//$commandBus->dispatch(new WithdrawMoney($id, 20, 'PLN', 'Lorem ipsum'));
 
 //var_dump($accountRepository->get($id));
 

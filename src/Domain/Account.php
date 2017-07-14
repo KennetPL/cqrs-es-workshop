@@ -47,7 +47,7 @@ class Account extends AggregateRoot implements \JsonSerializable
         $this->recordThat(MoneyAdded::from($this->id, $money->getAmount(), $money->getCurrency()));
     }
 
-    public function withdraw(Money $money)
+    public function withdraw(Money $money, $transactionTitle)
     {
         $afterWithdraw = $money->add($this->todayWithdrawn);
 
@@ -57,7 +57,11 @@ class Account extends AggregateRoot implements \JsonSerializable
                 '! Limit wynosi: ' . DAY_LIMIT . 'PLN');
         }
 
-        $this->recordThat(MoneyWithdrawn::from($this->id, $money->getAmount(), $money->getCurrency()));
+        if ($this->balance->getAmount() < $money->getAmount()) {
+            throw new \Exception('Nie masz wystarczających srodków');
+        }
+
+        $this->recordThat(MoneyWithdrawn::from($this->id, $money->getAmount(), $money->getCurrency(), $transactionTitle));
     }
 
     protected function aggregateId()

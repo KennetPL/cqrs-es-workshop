@@ -12,13 +12,16 @@ class WithdrawMoney extends Command
 
     private $currency;
 
-    public function __construct($id, $amount, $currency)
+    private $transactionTitle;
+
+    public function __construct($id, $amount, $currency, $transactionTitle = '')
     {
         $this->init();
 
         $this->id = $id;
         $this->amount = $amount;
         $this->currency = $currency;
+        $this->transactionTitle = $transactionTitle;
     }
 
     /**
@@ -39,11 +42,16 @@ class WithdrawMoney extends Command
         return $this->currency;
     }
 
+    public function transactionTitle() {
+        return $this->transactionTitle;
+    }
+
     public function payload()
     {
         return [
             'amount' => $this->amount,
             'currency' => $this->currency,
+            'transactionTitle' => $this->transactionTitle
         ];
     }
 
@@ -51,5 +59,6 @@ class WithdrawMoney extends Command
     {
         $this->currency = $payload['currency'];
         $this->amount = $payload['amount'];
+        $this->transactionTitle = $payload['transactionTitle'];
     }
 }

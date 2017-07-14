@@ -27,7 +27,7 @@ $app->get('/', function() {
             <strong>GET</strong> http://192.168.96.22:85/index.php/accounts</br>
             <strong>POST</strong> http://192.168.96.22:85/index.php/accounts (currency)</br>
             <strong>GET</strong> http://192.168.96.22:85/index.php/accounts/{accountId}</br>
-            <strong>PUT</strong> http://192.168.96.22:85/index.php/accounts/{accountId}/withdraw (amount, currency)</br>
+            <strong>PUT</strong> http://192.168.96.22:85/index.php/accounts/{accountId}/withdraw (amount, currency, transaction_title)</br>
         </p>';
     return new Response($html);
 });
@@ -58,7 +58,8 @@ $app->post('/accounts', function (Request $request, Application $app) {
 $app->put('/accounts/{accountId}/withdraw', function($accountId, Application $app, Request $request) {
     $amount = $request->get('amount');
     $currency = $request->get('currency', 'PLN');
-    $app['command_bus']->dispatch(new WithdrawMoney($accountId, $amount, $currency));
+    $transactionTitle = $request->get('transaction_title', '');
+    $app['command_bus']->dispatch(new WithdrawMoney($accountId, $amount, $currency, $transactionTitle));
 
     return new Response('', 204);
 })->convert('accountId', function ($accountId) {
@@ -76,6 +77,11 @@ $app->get('/accounts/{accountId}', function ($accountId, Application $app, Reque
 })->convert('accountId', function ($accountId) {
     return Uuid::fromString($accountId);
 });
+
+$app->after(function (Request $request, Response $response) {
+    $response->headers->set("Access-Control-Allow-Origin", "*");
+});
+
 
 $app->error(function (\Exception $e, $code) {
     return new Response($e->getMessage());

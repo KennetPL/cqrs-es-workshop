@@ -25,7 +25,11 @@ class EventSourcedAccountRepository implements AccountRepository
 
     public function get(Uuid $id): Account
     {
-        return $this->aggregateRepository->getAggregateRoot((string)$id);
+        $account = $this->aggregateRepository->getAggregateRoot((string)$id);
+        if (empty($account)) {
+            throw new \Exception('Nie ma konta o id: ' . $id);
+        }
+        return $account;
     }
 
     public function save(Account $account)

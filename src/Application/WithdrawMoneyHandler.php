@@ -30,7 +30,7 @@ class WithdrawMoneyHandler
     {
         /** @var Account $account */
         $account = $this->accountRepository->get($command->id());
-        $account->withdraw(new Money($command->amount(), new Currency($command->currency())));
+        $account->withdraw(new Money($command->amount(), new Currency($command->currency())), $command->transactionTitle());
         $this->accountRepository->save($account);
     }
 

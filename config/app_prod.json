@@ -1,6 +1,6 @@
 {
   "debug": true,
-  "day_limit": 100,
+  "day_limit": 10000,
   "db_configuration": {
     "dbname": "workshop",
     "user": "workshop",
